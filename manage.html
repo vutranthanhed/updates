@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage TERECONET Updates</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #000;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .container { background: #fff; border: 2px solid #000; padding: 30px; box-shadow: 6px 6px 0px #000; }
+        h1 { margin-top: 0; border-bottom: 2px solid #000; padding-bottom: 10px; text-transform: uppercase; }
+        label { display: block; font-weight: bold; margin-top: 20px; text-transform: uppercase; font-size: 0.85em; }
+        input, select, textarea {
+            width: 100%; padding: 12px; margin-top: 5px;
+            border: 1px solid #000; box-sizing: border-box; font-family: inherit; font-size: 1em;
+        }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        button {
+            background: #000; color: #fff; border: none;
+            padding: 15px 20px; margin-top: 30px; font-weight: bold; cursor: pointer;
+            width: 100%; text-transform: uppercase; letter-spacing: 1px;
+        }
+        button:hover { background: #333; }
+        #admin-panel { display: none; }
+        #status-msg { margin-top: 15px; font-weight: bold; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>TERECONET Admin Portal</h1>
+        
+        <div id="login-section">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="admin@example.com">
+            <label>Password</label>
+            <input type="password" id="password">
+            <button onclick="login()">Log In</button>
+            <p id="login-err" style="color: red; text-align: center;"></p>
+        </div>
+
+        <div id="admin-panel">
+            <p>Publish a new professional update. Select the category and ensure the deadline is accurate.</p>
+            
+            <label>Category</label>
+            <select id="category">
+                <option value="Journal Call">Journal Call</option>
+                <option value="Book Chapter Call">Book Chapter Call</option>
+                <option value="Conference Call">Conference Call</option>
+                <option value="Professional Development">Professional Development</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label>Title</label>
+            <input type="text" id="title" placeholder="e.g., Call for Papers: Special Issue">
+
+            <div class="grid-2">
+                <div>
+                    <label>Date (Publish/Event Date)</label>
+                    <input type="date" id="date">
+                </div>
+                <div>
+                    <label>Deadline</label>
+                    <input type="date" id="deadline">
+                </div>
+            </div>
+
+            <label>Location</label>
+            <input type="text" id="location" placeholder="e.g., University of Danang, Vietnam (or Online)">
+
+            <label>Editor(s) / Organizer(s)</label>
+            <textarea id="editor" rows="2" placeholder="List editors or organizers..."></textarea>
+
+            <label>Link to Original Call</label>
+            <input type="url" id="link" placeholder="https://...">
+
+            <label>Description</label>
+            <textarea id="description" rows="6" placeholder="Provide full details, requirements, and themes here..."></textarea>
+
+            <button onclick="postUpdate()">Publish Update</button>
+            <p id="status-msg"></p>
+            
+            <button onclick="logout()" style="background: #fff; color: #000; border: 2px solid #000; margin-top: 20px;">Log Out</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXH_ojtLf549LPlveiwhA9cMEx-2e2I8E",
+            authDomain: "tereconet-updates.firebaseapp.com",
+            databaseURL: "https://tereconet-updates-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "tereconet-updates",
+            storageBucket: "tereconet-updates.firebasestorage.app",
+            messagingSenderId: "9697582206",
+            appId: "1:9697582206:web:64e784273c913f34d24c2f",
+            measurementId: "G-1V47RZBFSR"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+            } else {
+                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('admin-panel').style.display = 'none';
+            }
+        });
+
+        function login() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(e, p).catch(err => {
+                document.getElementById('login-err').innerText = err.message;
+            });
+        }
+
+        function logout() { auth.signOut(); }
+
+        function postUpdate() {
+            const category = document.getElementById('category').value;
+            const title = document.getElementById('title').value;
+            const date = document.getElementById('date').value;
+            const deadline = document.getElementById('deadline').value;
+            const location = document.getElementById('location').value;
+            const editor = document.getElementById('editor').value;
+            const link = document.getElementById('link').value;
+            const description = document.getElementById('description').value;
+
+            if(!title || !deadline || !description) {
+                document.getElementById('status-msg').innerText = "Title, Deadline, and Description are required.";
+                document.getElementById('status-msg').style.color = "red";
+                return;
+            }
+
+            db.ref('updates').push({
+                category: category,
+                title: title,
+                date: date,
+                deadline: deadline,
+                location: location,
+                editor: editor,
+                link: link,
+                description: description,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                document.getElementById('status-msg').innerText = "Successfully published!";
+                document.getElementById('status-msg').style.color = "green";
+                
+                // Clear form fields except category
+                ['title', 'date', 'deadline', 'location', 'editor', 'link', 'description'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+                
+                setTimeout(() => document.getElementById('status-msg').innerText = '', 4000);
+            }).catch(err => {
+                document.getElementById('status-msg').innerText = "Error: " + err.message;
+                document.getElementById('status-msg').style.color = "red";
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERECONET Professional Updates</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 5px; font-size: 1.2em; }
+        .subheading { font-size: 1.1em; color: #333; margin: 0; }
+        a { color: #000; font-weight: bold; text-decoration: underline; }
+        a:hover { background: #000; color: #fff; text-decoration: none; }
+        
+        /* Top Grid Layout */
+        .top-dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .calendar-container, .notice-board {
+            border: 2px solid #000;
+            padding: 20px;
+            box-shadow: 4px 4px 0px #000;
+        }
+        
+        /* Calendar Styles */
+        .calendar-table { width: 100%; text-align: center; border-collapse: collapse; margin-top: 15px; }
+        .calendar-table th, .calendar-table td { padding: 8px; border: 1px solid #eee; }
+        .calendar-table th { font-weight: bold; text-transform: uppercase; font-size: 0.8em; }
+        .today { background-color: #000; color: #fff; font-weight: bold; }
+        
+        /* Notice Board Styles */
+        .urgent-item { margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+        .urgent-item:last-child { border-bottom: none; }
+        .urgent-title { font-weight: bold; }
+        .urgent-days { display: inline-block; background: #000; color: #fff; padding: 2px 6px; font-size: 0.8em; margin-top: 5px; }
+        
+        /* Category Section Styles */
+        .category-section { margin-bottom: 40px; }
+        .category-heading {
+            background-color: #000;
+            color: #fff;
+            padding: 8px 15px;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        /* Post Styles */
+        .post { border: 1px solid #000; padding: 25px; margin-bottom: 20px; box-shadow: 4px 4px 0px #000; }
+        .title { font-size: 1.3em; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; }
+        .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 0.9em; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .meta strong { text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.5px; }
+        .content { margin-top: 15px; white-space: pre-wrap; }
+        
+        @media (max-width: 768px) {
+            .top-dashboard, .meta { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>TERECONET Professional Updates</h1>
+        <p class="subheading">Prepared by Dr Tran Thanh Vu (<a href="mailto:vutranthanh.ed@gmail.com">vutranthanh.ed@gmail.com</a>)</p>
+    </header>
+
+    <div class="top-dashboard">
+        <div class="calendar-container">
+            <h2 id="cal-month-year" style="margin-top: 0;">Calendar</h2>
+            <div id="calendar-wrapper"></div>
+        </div>
+        
+        <div class="notice-board">
+            <h2 style="margin-top: 0;">Ending Soon (Next 5 Days)</h2>
+            <div id="urgent-feed">
+                <p>Loading urgent calls...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="categorized-feed">
+        <p>Loading updates...</p>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXH_ojtLf549LPlveiwhA9cMEx-2e2I8E",
+            authDomain: "tereconet-updates.firebaseapp.com",
+            databaseURL: "https://tereconet-updates-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "tereconet-updates",
+            storageBucket: "tereconet-updates.firebasestorage.app",
+            messagingSenderId: "9697582206",
+            appId: "1:9697582206:web:64e784273c913f34d24c2f",
+            measurementId: "G-1V47RZBFSR"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Build Calendar
+        function renderCalendar() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            document.getElementById('cal-month-year').innerText = now.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            let html = '<table class="calendar-table"><tr><th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th></tr><tr>';
+            let day = 1;
+            
+            for (let i = 0; i < 42; i++) {
+                if (i < firstDay || day > daysInMonth) {
+                    html += '<td></td>';
+                } else {
+                    const isToday = (day === now.getDate()) ? 'class="today"' : '';
+                    html += `<td ${isToday}>${day}</td>`;
+                    day++;
+                }
+                if ((i + 1) % 7 === 0 && day <= daysInMonth) html += '</tr><tr>';
+            }
+            html += '</tr></table>';
+            document.getElementById('calendar-wrapper').innerHTML = html;
+        }
+        renderCalendar();
+
+        // Fetch and Render Categorized Data
+        db.ref('updates').on('value', (snapshot) => {
+            const container = document.getElementById('categorized-feed');
+            const urgentFeed = document.getElementById('urgent-feed');
+            container.innerHTML = ''; 
+            urgentFeed.innerHTML = '';
+            
+            const updates = [];
+            snapshot.forEach((child) => { updates.push(child.val()); });
+
+            if (updates.length === 0) {
+                container.innerHTML = '<p>No updates available at this time.</p>';
+                urgentFeed.innerHTML = '<p>No imminent deadlines.</p>';
+                return;
+            }
+
+            // Sort all updates by deadline (soonest first)
+            updates.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let urgentCount = 0;
+
+            // Check 5-day notices
+            updates.forEach(update => {
+                const dlDate = new Date(update.deadline);
+                dlDate.setHours(0, 0, 0, 0);
+                const diffDays = Math.ceil((dlDate - today) / (1000 * 60 * 60 * 24));
+
+                if (diffDays >= 0 && diffDays <= 5) {
+                    urgentCount++;
+                    const dlParts = update.deadline.split('-');
+                    const displayDl = dlParts.length === 3 ? `${dlParts[2]}/${dlParts[1]}/${dlParts[0]}` : update.deadline;
+                    urgentFeed.innerHTML += `
+                        <div class="urgent-item">
+                            <div class="urgent-title">${update.title}</div>
+                            <div class="urgent-days">Deadline: ${displayDl} (${diffDays === 0 ? 'Today' : diffDays + ' days left'})</div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (urgentCount === 0) {
+                urgentFeed.innerHTML = '<p>No imminent deadlines.</p>';
+            }
+
+            // Group by Category
+            const categories = {};
+            updates.forEach(update => {
+                const cat = update.category || 'Other Updates';
+                if (!categories[cat]) categories[cat] = [];
+                categories[cat].push(update);
+            });
+
+            // Render categories
+            for (const [categoryName, items] of Object.entries(categories)) {
+                let sectionHtml = `
+                    <div class="category-section">
+                        <div class="category-heading">${categoryName}</div>
+                `;
+
+                items.forEach(update => {
+                    const dateParts = update.date ? update.date.split('-') : [];
+                    const displayDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : (update.date || 'N/A');
+                    
+                    const deadlineParts = update.deadline ? update.deadline.split('-') : [];
+                    const displayDeadline = deadlineParts.length === 3 ? `${deadlineParts[2]}/${deadlineParts[1]}/${deadlineParts[0]}` : update.deadline;
+
+                    sectionHtml += `
+                        <div class="post">
+                            <div class="title">${update.title}</div>
+                            <div class="meta">
+                                <div><strong>Date:</strong> ${displayDate}</div>
+                                <div><strong>Deadline:</strong> ${displayDeadline}</div>
+                                <div><strong>Location:</strong> ${update.location || 'N/A'}</div>
+                                <div><strong>Editor(s):</strong><br>${(update.editor || 'N/A').replace(/\n/g, '<br>')}</div>
+                            </div>
+                            <div class="content">${update.description.replace(/\n/g, '<br>')}</div>
+                            ${update.link ? `<br><a href="${update.link}" target="_blank">View Original Call &rarr;</a>` : ''}
+                        </div>
+                    `;
+                });
+
+                sectionHtml += `</div>`;
+                container.innerHTML += sectionHtml;
+            }
+        });
+    </script>
+</body>
+</html>
