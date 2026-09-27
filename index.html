@@ -14,14 +14,11 @@
       --strong-border: #d0d5dc;
       --accent: #111111;
       --accent-soft: #f0f1f3;
-      --urgent: #b00020;
       --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
       --radius: 12px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -67,9 +64,7 @@
       font-weight: 600;
     }
 
-    a:hover {
-      opacity: 0.8;
-    }
+    a:hover { opacity: 0.8; }
 
     .top-dashboard {
       display: grid;
@@ -150,9 +145,7 @@
       border-radius: 999px;
     }
 
-    .category-section {
-      margin-bottom: 28px;
-    }
+    .category-section { margin-bottom: 28px; }
 
     .category-heading {
       display: inline-block;
@@ -222,18 +215,20 @@
       color: var(--muted);
     }
 
+    .error {
+      background: #fff4f4;
+      border: 1px solid #f2c0c0;
+      color: #8a1f1f;
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 0.94rem;
+    }
+
     @media (max-width: 860px) {
-      .top-dashboard {
-        grid-template-columns: 1fr;
-      }
-
-      .meta {
-        grid-template-columns: 1fr;
-      }
-
-      h1 {
-        font-size: 1.4rem;
-      }
+      .top-dashboard { grid-template-columns: 1fr; }
+      .meta { grid-template-columns: 1fr; }
+      h1 { font-size: 1.4rem; }
     }
   </style>
 </head>
@@ -246,6 +241,8 @@
         (<a href="mailto:vutranthanh.ed@gmail.com">vutranthanh.ed@gmail.com</a>)
       </p>
     </header>
+
+    <div id="error-box"></div>
 
     <section class="top-dashboard">
       <div class="panel">
@@ -266,7 +263,6 @@
     </section>
   </main>
 
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
@@ -284,6 +280,11 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    function setError(msg) {
+      const box = document.getElementById("error-box");
+      box.innerHTML = msg ? `<div class="error">${msg}</div>` : "";
+    }
+
     function escapeHtml(str) {
       return String(str || "")
         .replace(/&/g, "&amp;")
@@ -297,16 +298,40 @@
       return escapeHtml(str).replace(/\n/g, "<br>");
     }
 
-    function formatDate(isoDate) {
-      if (!isoDate || typeof isoDate !== "string") return "N/A";
-      const parts = isoDate.split("-");
-      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : isoDate;
+    function formatDate(raw) {
+      if (!raw || typeof raw !== "string") return "N/A";
+      if (raw.includes("-")) {
+        const p = raw.split("-");
+        if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+      }
+      if (raw.includes("/")) return raw;
+      return raw;
     }
 
-    function getLocalISODate() {
+    function getLocalTodayDateOnly() {
       const now = new Date();
-      const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-      return local.toISOString().slice(0, 10); // YYYY-MM-DD
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    function parseDeadlineToDate(raw) {
+      if (!raw || typeof raw !== "string") return null;
+
+      // yyyy-mm-dd
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        const [y, m, d] = raw.split("-").map(Number);
+        return new Date(y, m - 1, d);
+      }
+
+      // dd/mm/yyyy
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+        const [d, m, y] = raw.split("/").map(Number);
+        return new Date(y, m - 1, d);
+      }
+
+      // fallback parser
+      const dt = new Date(raw);
+      if (isNaN(dt.getTime())) return null;
+      return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
     }
 
     function buildCalendar() {
@@ -328,7 +353,6 @@
         </tr><tr>`;
 
       let day = 1;
-
       for (let i = 0; i < 42; i++) {
         if (i < firstDay || day > daysInMonth) {
           html += "<td></td>";
@@ -344,86 +368,36 @@
       document.getElementById("calendar-wrapper").innerHTML = html;
     }
 
-    buildCalendar();
-
-    db.ref("updates").on("value", (snapshot) => {
-      const container = document.getElementById("categorized-feed");
-      const urgentFeed = document.getElementById("urgent-feed");
-      container.innerHTML = "";
-      urgentFeed.innerHTML = "";
-
-      const updates = [];
-      snapshot.forEach((child) => updates.push({ id: child.key, ...child.val() }));
-
-      const todayISO = getLocalISODate();
-
-      // Hide expired posts (deadline before today)
-      const activeUpdates = updates.filter((u) => u && u.deadline && u.deadline >= todayISO);
-
-      if (activeUpdates.length === 0) {
-        container.innerHTML = '<p class="empty">No active updates at this time.</p>';
-        urgentFeed.innerHTML = '<p class="empty">No imminent deadlines.</p>';
-        return;
-      }
-
-      // Sort by nearest deadline
-      activeUpdates.sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)));
-
-      // Urgent block: within next 5 days
-      let urgentCount = 0;
-      activeUpdates.forEach((u) => {
-        const today = new Date(todayISO + "T00:00:00");
-        const dl = new Date(u.deadline + "T00:00:00");
-        const diffDays = Math.ceil((dl - today) / (1000 * 60 * 60 * 24));
-
-        if (diffDays >= 0 && diffDays <= 5) {
-          urgentCount++;
-          urgentFeed.innerHTML += `
-            <div class="urgent-item">
-              <div class="urgent-title">${escapeHtml(u.title || "Untitled")}</div>
-              <div class="urgent-days">
-                Deadline: ${formatDate(u.deadline)} (${diffDays === 0 ? "Today" : `${diffDays} day(s) left`})
-              </div>
-            </div>
-          `;
-        }
+    function renderGrouped(container, updates, headingOverride) {
+      const groups = {};
+      updates.forEach((u) => {
+        const cat = headingOverride || (u.category || "Other Updates").trim();
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(u);
       });
 
-      if (urgentCount === 0) {
-        urgentFeed.innerHTML = '<p class="empty">No imminent deadlines.</p>';
-      }
-
-      // Group by category
-      const categories = {};
-      activeUpdates.forEach((u) => {
-        const cat = (u.category || "Other Updates").trim();
-        if (!categories[cat]) categories[cat] = [];
-        categories[cat].push(u);
-      });
-
-      // Render grouped sections
-      Object.entries(categories).forEach(([categoryName, items]) => {
+      Object.entries(groups).forEach(([categoryName, items]) => {
         let sectionHtml = `
           <div class="category-section">
             <div class="category-heading">${escapeHtml(categoryName)}</div>
         `;
 
         items.forEach((u) => {
-          const safeLink = typeof u.link === "string" && /^https?:\/\//i.test(u.link.trim()) ? u.link.trim() : "";
+          const safeLink =
+            typeof u.link === "string" && /^https?:\/\//i.test(u.link.trim())
+              ? u.link.trim()
+              : "";
 
           sectionHtml += `
             <article class="post">
               <h3 class="title">${escapeHtml(u.title || "Untitled")}</h3>
-
               <div class="meta">
                 <div class="meta-item"><strong>Date:</strong> ${escapeHtml(formatDate(u.date))}</div>
                 <div class="meta-item"><strong>Deadline:</strong> ${escapeHtml(formatDate(u.deadline))}</div>
                 <div class="meta-item"><strong>Location:</strong> ${escapeHtml(u.location || "N/A")}</div>
                 <div class="meta-item"><strong>Editor(s):</strong> ${nl2br(u.editor || "N/A")}</div>
               </div>
-
               <div class="content">${nl2br(u.description || "")}</div>
-
               ${safeLink ? `<p style="margin-top: 12px;"><a href="${safeLink}" target="_blank" rel="noopener noreferrer">View Original Call →</a></p>` : ""}
             </article>
           `;
@@ -432,7 +406,102 @@
         sectionHtml += "</div>";
         container.innerHTML += sectionHtml;
       });
-    });
+    }
+
+    buildCalendar();
+
+    db.ref("updates").on(
+      "value",
+      (snapshot) => {
+        setError("");
+        const container = document.getElementById("categorized-feed");
+        const urgentFeed = document.getElementById("urgent-feed");
+        container.innerHTML = "";
+        urgentFeed.innerHTML = "";
+
+        const all = [];
+        snapshot.forEach((child) => all.push({ id: child.key, ...child.val() }));
+
+        if (all.length === 0) {
+          container.innerHTML = '<p class="empty">No updates found in database.</p>';
+          urgentFeed.innerHTML = '<p class="empty">No imminent deadlines.</p>';
+          return;
+        }
+
+        const today = getLocalTodayDateOnly();
+
+        const active = [];
+        const expired = [];
+        all.forEach((u) => {
+          const d = parseDeadlineToDate(u.deadline);
+
+          // If deadline missing/unparseable, keep visible (active bucket) so data isn't "lost"
+          if (!d) {
+            active.push(u);
+            return;
+          }
+
+          if (d >= today) active.push(u);
+          else expired.push(u);
+        });
+
+        // Sort active by nearest deadline (unknown deadlines at bottom)
+        active.sort((a, b) => {
+          const da = parseDeadlineToDate(a.deadline);
+          const dbd = parseDeadlineToDate(b.deadline);
+          if (!da && !dbd) return 0;
+          if (!da) return 1;
+          if (!dbd) return -1;
+          return da - dbd;
+        });
+
+        // Urgent section from active only
+        let urgentCount = 0;
+        active.forEach((u) => {
+          const d = parseDeadlineToDate(u.deadline);
+          if (!d) return;
+          const diffDays = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+          if (diffDays >= 0 && diffDays <= 5) {
+            urgentCount++;
+            urgentFeed.innerHTML += `
+              <div class="urgent-item">
+                <div class="urgent-title">${escapeHtml(u.title || "Untitled")}</div>
+                <div class="urgent-days">
+                  Deadline: ${formatDate(u.deadline)} (${diffDays === 0 ? "Today" : `${diffDays} day(s) left`})
+                </div>
+              </div>
+            `;
+          }
+        });
+
+        if (urgentCount === 0) {
+          urgentFeed.innerHTML = '<p class="empty">No imminent deadlines.</p>';
+        }
+
+        if (active.length > 0) {
+          renderGrouped(container, active);
+        } else {
+          container.innerHTML = '<p class="empty">No active updates at this time. Showing archive below.</p>';
+          // show expired archive instead of blank page
+          expired.sort((a, b) => {
+            const da = parseDeadlineToDate(a.deadline);
+            const dbd = parseDeadlineToDate(b.deadline);
+            if (!da && !dbd) return 0;
+            if (!da) return 1;
+            if (!dbd) return -1;
+            return dbd - da; // latest expired first
+          });
+          renderGrouped(container, expired, "Archive (Expired)");
+        }
+      },
+      (error) => {
+        const container = document.getElementById("categorized-feed");
+        const urgentFeed = document.getElementById("urgent-feed");
+        urgentFeed.innerHTML = '<p class="empty">Unable to load urgent calls.</p>';
+        container.innerHTML = '<p class="empty">Unable to load updates.</p>';
+        setError("Firebase read failed: " + error.message + ". Check Realtime Database Rules for public read on /updates.");
+      }
+    );
   </script>
 </body>
 </html>
