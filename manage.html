@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Manage TERECONET Updates</title>
     <style>
         body {
@@ -29,25 +29,29 @@
         button:hover { background: #333; }
         #admin-panel { display: none; }
         #status-msg { margin-top: 15px; font-weight: bold; text-align: center; }
+        .secondary-btn {
+            background: #fff !important;
+            color: #000 !important;
+            border: 2px solid #000 !important;
+        }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h1>TERECONET Admin Portal</h1>
-        
+
         <div id="login-section">
             <label>Email</label>
-            <input type="email" id="email" placeholder="admin@example.com">
+            <input type="email" id="email" placeholder="admin@example.com" />
             <label>Password</label>
-            <input type="password" id="password">
+            <input type="password" id="password" />
             <button onclick="login()">Log In</button>
             <p id="login-err" style="color: red; text-align: center;"></p>
         </div>
 
         <div id="admin-panel">
             <p>Publish a new professional update. Select the category and ensure the deadline is accurate.</p>
-            
+
             <label>Category</label>
             <select id="category">
                 <option value="Journal Call">Journal Call</option>
@@ -58,45 +62,45 @@
             </select>
 
             <label>Title</label>
-            <input type="text" id="title" placeholder="e.g., Call for Papers: Special Issue">
+            <input type="text" id="title" placeholder="e.g., Call for Papers: Special Issue" />
 
             <div class="grid-2">
                 <div>
                     <label>Date (Publish/Event Date)</label>
-                    <input type="date" id="date">
+                    <input type="date" id="date" />
                 </div>
                 <div>
                     <label>Deadline</label>
-                    <input type="date" id="deadline">
+                    <input type="date" id="deadline" />
                 </div>
             </div>
 
             <label>Location</label>
-            <input type="text" id="location" placeholder="e.g., University of Danang, Vietnam (or Online)">
+            <input type="text" id="location" placeholder="e.g., University of Danang, Vietnam (or Online)" />
 
             <label>Editor(s) / Organizer(s)</label>
             <textarea id="editor" rows="2" placeholder="List editors or organizers..."></textarea>
 
             <label>Link to Original Call</label>
-            <input type="url" id="link" placeholder="https://...">
+            <input type="url" id="link" placeholder="https://..." />
 
             <label>Description</label>
             <textarea id="description" rows="6" placeholder="Provide full details, requirements, and themes here..."></textarea>
 
             <button onclick="postUpdate()">Publish Update</button>
+            <button class="secondary-btn" onclick="cleanupExpiredPosts()">Delete Expired Posts Now</button>
             <p id="status-msg"></p>
-            
-            <button onclick="logout()" style="background: #fff; color: #000; border: 2px solid #000; margin-top: 20px;">Log Out</button>
+
+            <button onclick="logout()" class="secondary-btn">Log Out</button>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyBXH_ojtLf549LPlveiwhA9cMEx-2e2I8E",
+            apiKey: "YOUR_API_KEY",
             authDomain: "tereconet-updates.firebaseapp.com",
             databaseURL: "https://tereconet-updates-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "tereconet-updates",
@@ -105,15 +109,30 @@
             appId: "1:9697582206:web:64e784273c913f34d24c2f",
             measurementId: "G-1V47RZBFSR"
         };
-        
+
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
 
-        auth.onAuthStateChanged(user => {
+        function getLocalISODate() {
+            const now = new Date();
+            const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+            return local.toISOString().slice(0, 10); // YYYY-MM-DD
+        }
+
+        function setStatus(msg, color = "green") {
+            const el = document.getElementById('status-msg');
+            el.innerText = msg;
+            el.style.color = color;
+        }
+
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('login-err').innerText = '';
+                // Auto cleanup once on login
+                await cleanupExpiredPosts(true);
             } else {
                 document.getElementById('login-section').style.display = 'block';
                 document.getElementById('admin-panel').style.display = 'none';
@@ -121,55 +140,88 @@
         });
 
         function login() {
-            const e = document.getElementById('email').value;
+            const e = document.getElementById('email').value.trim();
             const p = document.getElementById('password').value;
+            document.getElementById('login-err').innerText = '';
             auth.signInWithEmailAndPassword(e, p).catch(err => {
                 document.getElementById('login-err').innerText = err.message;
             });
         }
 
-        function logout() { auth.signOut(); }
+        function logout() {
+            auth.signOut();
+        }
 
         function postUpdate() {
+            const user = auth.currentUser;
+            if (!user) {
+                setStatus("Please log in first.", "red");
+                return;
+            }
+
             const category = document.getElementById('category').value;
-            const title = document.getElementById('title').value;
+            const title = document.getElementById('title').value.trim();
             const date = document.getElementById('date').value;
             const deadline = document.getElementById('deadline').value;
-            const location = document.getElementById('location').value;
-            const editor = document.getElementById('editor').value;
-            const link = document.getElementById('link').value;
-            const description = document.getElementById('description').value;
+            const location = document.getElementById('location').value.trim();
+            const editor = document.getElementById('editor').value.trim();
+            const link = document.getElementById('link').value.trim();
+            const description = document.getElementById('description').value.trim();
 
-            if(!title || !deadline || !description) {
-                document.getElementById('status-msg').innerText = "Title, Deadline, and Description are required.";
-                document.getElementById('status-msg').style.color = "red";
+            if (!title || !deadline || !description) {
+                setStatus("Title, Deadline, and Description are required.", "red");
                 return;
             }
 
             db.ref('updates').push({
-                category: category,
-                title: title,
-                date: date,
-                deadline: deadline,
-                location: location,
-                editor: editor,
-                link: link,
-                description: description,
+                category,
+                title,
+                date,
+                deadline,
+                location,
+                editor,
+                link,
+                description,
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             }).then(() => {
-                document.getElementById('status-msg').innerText = "Successfully published!";
-                document.getElementById('status-msg').style.color = "green";
-                
-                // Clear form fields except category
+                setStatus("Successfully published!", "green");
                 ['title', 'date', 'deadline', 'location', 'editor', 'link', 'description'].forEach(id => {
                     document.getElementById(id).value = '';
                 });
-                
-                setTimeout(() => document.getElementById('status-msg').innerText = '', 4000);
+                setTimeout(() => setStatus(''), 4000);
             }).catch(err => {
-                document.getElementById('status-msg').innerText = "Error: " + err.message;
-                document.getElementById('status-msg').style.color = "red";
+                setStatus("Error: " + err.message, "red");
             });
+        }
+
+        async function cleanupExpiredPosts(silent = false) {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const todayISO = getLocalISODate();
+
+            try {
+                const snapshot = await db.ref('updates').once('value');
+                const updatesToDelete = {};
+                let count = 0;
+
+                snapshot.forEach((child) => {
+                    const val = child.val() || {};
+                    if (val.deadline && typeof val.deadline === 'string' && val.deadline < todayISO) {
+                        updatesToDelete[child.key] = null;
+                        count++;
+                    }
+                });
+
+                if (count > 0) {
+                    await db.ref('updates').update(updatesToDelete);
+                    if (!silent) setStatus(`Deleted ${count} expired post(s).`, "green");
+                } else if (!silent) {
+                    setStatus("No expired posts found.", "green");
+                }
+            } catch (err) {
+                if (!silent) setStatus("Cleanup error: " + err.message, "red");
+            }
         }
     </script>
 </body>
