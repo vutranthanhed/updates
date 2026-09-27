@@ -1,229 +1,438 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TERECONET Professional Updates</title>
-    <style>
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #ffffff;
-            color: #000000;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.6;
-        }
-        header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
-        h1 { margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 1px; }
-        h2 { text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 5px; font-size: 1.2em; }
-        .subheading { font-size: 1.1em; color: #333; margin: 0; }
-        a { color: #000; font-weight: bold; text-decoration: underline; }
-        a:hover { background: #000; color: #fff; text-decoration: none; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TERECONET Professional Updates</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --text: #121212;
+      --muted: #5f6368;
+      --border: #e3e6ea;
+      --strong-border: #d0d5dc;
+      --accent: #111111;
+      --accent-soft: #f0f1f3;
+      --urgent: #b00020;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      --radius: 12px;
+    }
 
-        .top-dashboard {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-        .calendar-container, .notice-board {
-            border: 2px solid #000;
-            padding: 20px;
-            box-shadow: 4px 4px 0px #000;
-        }
+    * {
+      box-sizing: border-box;
+    }
 
-        .calendar-table { width: 100%; text-align: center; border-collapse: collapse; margin-top: 15px; }
-        .calendar-table th, .calendar-table td { padding: 8px; border: 1px solid #eee; }
-        .calendar-table th { font-weight: bold; text-transform: uppercase; font-size: 0.8em; }
-        .today { background-color: #000; color: #fff; font-weight: bold; }
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
 
-        .urgent-item { margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
-        .urgent-item:last-child { border-bottom: none; }
-        .urgent-title { font-weight: bold; }
-        .urgent-days { display: inline-block; background: #000; color: #fff; padding: 2px 6px; font-size: 0.8em; margin-top: 5px; }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 16px 56px;
+    }
 
-        .category-section { margin-bottom: 40px; }
-        .category-heading {
-            background-color: #000;
-            color: #fff;
-            padding: 8px 15px;
-            font-size: 1.1em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
+    header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
 
-        .post { border: 1px solid #000; padding: 25px; margin-bottom: 20px; box-shadow: 4px 4px 0px #000; }
-        .title { font-size: 1.3em; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; }
-        .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 0.9em; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .meta strong { text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.5px; }
-        .content { margin-top: 15px; white-space: pre-wrap; }
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 1.7rem;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      line-height: 1.3;
+    }
 
-        @media (max-width: 768px) {
-            .top-dashboard, .meta { grid-template-columns: 1fr; }
-        }
-    </style>
+    .subheading {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      font-weight: 600;
+    }
+
+    a:hover {
+      opacity: 0.8;
+    }
+
+    .top-dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 16px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px 0;
+      font-size: 1rem;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .calendar-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      margin-top: 4px;
+      font-size: 0.93rem;
+    }
+
+    .calendar-table th {
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      padding: 8px 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .calendar-table td {
+      padding: 9px 4px;
+      border-bottom: 1px solid #f0f2f5;
+      color: #2a2f36;
+    }
+
+    .today {
+      background: var(--accent);
+      color: #fff !important;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    .urgent-item {
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--strong-border);
+    }
+
+    .urgent-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .urgent-title {
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .urgent-days {
+      display: inline-block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: #111;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .category-section {
+      margin-bottom: 28px;
+    }
+
+    .category-heading {
+      display: inline-block;
+      margin: 0 0 12px 0;
+      background: var(--accent-soft);
+      color: #1b1f24;
+      border: 1px solid var(--strong-border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .post {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .title {
+      margin: 0 0 12px 0;
+      font-size: 1.15rem;
+      line-height: 1.4;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+      margin-bottom: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafbfc;
+      font-size: 0.92rem;
+    }
+
+    .meta-item strong {
+      display: inline-block;
+      min-width: 78px;
+      color: #2f3338;
+      text-transform: uppercase;
+      letter-spacing: 0.25px;
+      font-size: 0.78rem;
+    }
+
+    .content {
+      margin-top: 2px;
+      color: #23272d;
+      white-space: pre-wrap;
+    }
+
+    .empty {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 860px) {
+      .top-dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      .meta {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
 </head>
 <body>
+  <main class="page">
     <header>
-        <h1>TERECONET Professional Updates</h1>
-        <p class="subheading">Prepared by Dr Tran Thanh Vu (<a href="mailto:vutranthanh.ed@gmail.com">vutranthanh.ed@gmail.com</a>)</p>
+      <h1>TERECONET Professional Updates</h1>
+      <p class="subheading">
+        Prepared by Dr Tran Thanh Vu
+        (<a href="mailto:vutranthanh.ed@gmail.com">vutranthanh.ed@gmail.com</a>)
+      </p>
     </header>
 
-    <div class="top-dashboard">
-        <div class="calendar-container">
-            <h2 id="cal-month-year" style="margin-top: 0;">Calendar</h2>
-            <div id="calendar-wrapper"></div>
-        </div>
+    <section class="top-dashboard">
+      <div class="panel">
+        <h2 id="cal-month-year">Calendar</h2>
+        <div id="calendar-wrapper"></div>
+      </div>
 
-        <div class="notice-board">
-            <h2 style="margin-top: 0;">Ending Soon (Next 5 Days)</h2>
-            <div id="urgent-feed">
-                <p>Loading urgent calls...</p>
+      <div class="panel">
+        <h2>Ending Soon (Next 5 Days)</h2>
+        <div id="urgent-feed">
+          <p class="empty">Loading urgent calls...</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="categorized-feed">
+      <p class="empty">Loading updates...</p>
+    </section>
+  </main>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "tereconet-updates.firebaseapp.com",
+      databaseURL: "https://tereconet-updates-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "tereconet-updates",
+      storageBucket: "tereconet-updates.firebasestorage.app",
+      messagingSenderId: "9697582206",
+      appId: "1:9697582206:web:64e784273c913f34d24c2f",
+      measurementId: "G-1V47RZBFSR"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function nl2br(str) {
+      return escapeHtml(str).replace(/\n/g, "<br>");
+    }
+
+    function formatDate(isoDate) {
+      if (!isoDate || typeof isoDate !== "string") return "N/A";
+      const parts = isoDate.split("-");
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : isoDate;
+    }
+
+    function getLocalISODate() {
+      const now = new Date();
+      const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 10); // YYYY-MM-DD
+    }
+
+    function buildCalendar() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      document.getElementById("cal-month-year").innerText = now.toLocaleString("en-GB", {
+        month: "long",
+        year: "numeric"
+      });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      let html = `<table class="calendar-table">
+        <tr>
+          <th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+        </tr><tr>`;
+
+      let day = 1;
+
+      for (let i = 0; i < 42; i++) {
+        if (i < firstDay || day > daysInMonth) {
+          html += "<td></td>";
+        } else {
+          const isToday = day === now.getDate() ? 'class="today"' : "";
+          html += `<td ${isToday}>${day}</td>`;
+          day++;
+        }
+        if ((i + 1) % 7 === 0 && day <= daysInMonth) html += "</tr><tr>";
+      }
+
+      html += "</tr></table>";
+      document.getElementById("calendar-wrapper").innerHTML = html;
+    }
+
+    buildCalendar();
+
+    db.ref("updates").on("value", (snapshot) => {
+      const container = document.getElementById("categorized-feed");
+      const urgentFeed = document.getElementById("urgent-feed");
+      container.innerHTML = "";
+      urgentFeed.innerHTML = "";
+
+      const updates = [];
+      snapshot.forEach((child) => updates.push({ id: child.key, ...child.val() }));
+
+      const todayISO = getLocalISODate();
+
+      // Hide expired posts (deadline before today)
+      const activeUpdates = updates.filter((u) => u && u.deadline && u.deadline >= todayISO);
+
+      if (activeUpdates.length === 0) {
+        container.innerHTML = '<p class="empty">No active updates at this time.</p>';
+        urgentFeed.innerHTML = '<p class="empty">No imminent deadlines.</p>';
+        return;
+      }
+
+      // Sort by nearest deadline
+      activeUpdates.sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)));
+
+      // Urgent block: within next 5 days
+      let urgentCount = 0;
+      activeUpdates.forEach((u) => {
+        const today = new Date(todayISO + "T00:00:00");
+        const dl = new Date(u.deadline + "T00:00:00");
+        const diffDays = Math.ceil((dl - today) / (1000 * 60 * 60 * 24));
+
+        if (diffDays >= 0 && diffDays <= 5) {
+          urgentCount++;
+          urgentFeed.innerHTML += `
+            <div class="urgent-item">
+              <div class="urgent-title">${escapeHtml(u.title || "Untitled")}</div>
+              <div class="urgent-days">
+                Deadline: ${formatDate(u.deadline)} (${diffDays === 0 ? "Today" : `${diffDays} day(s) left`})
+              </div>
             </div>
-        </div>
-    </div>
-
-    <div id="categorized-feed">
-        <p>Loading updates...</p>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "tereconet-updates.firebaseapp.com",
-            databaseURL: "https://tereconet-updates-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "tereconet-updates",
-            storageBucket: "tereconet-updates.firebasestorage.app",
-            messagingSenderId: "9697582206",
-            appId: "1:9697582206:web:64e784273c913f34d24c2f",
-            measurementId: "G-1V47RZBFSR"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        function getLocalISODate() {
-            const now = new Date();
-            const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-            return local.toISOString().slice(0, 10); // YYYY-MM-DD
+          `;
         }
+      });
 
-        function formatDate(isoDate) {
-            if (!isoDate || typeof isoDate !== 'string') return 'N/A';
-            const parts = isoDate.split('-');
-            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : isoDate;
-        }
+      if (urgentCount === 0) {
+        urgentFeed.innerHTML = '<p class="empty">No imminent deadlines.</p>';
+      }
 
-        function renderCalendar() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth();
-            document.getElementById('cal-month-year').innerText = now.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+      // Group by category
+      const categories = {};
+      activeUpdates.forEach((u) => {
+        const cat = (u.category || "Other Updates").trim();
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(u);
+      });
 
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+      // Render grouped sections
+      Object.entries(categories).forEach(([categoryName, items]) => {
+        let sectionHtml = `
+          <div class="category-section">
+            <div class="category-heading">${escapeHtml(categoryName)}</div>
+        `;
 
-            let html = '<table class="calendar-table"><tr><th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th></tr><tr>';
-            let day = 1;
+        items.forEach((u) => {
+          const safeLink = typeof u.link === "string" && /^https?:\/\//i.test(u.link.trim()) ? u.link.trim() : "";
 
-            for (let i = 0; i < 42; i++) {
-                if (i < firstDay || day > daysInMonth) {
-                    html += '<td></td>';
-                } else {
-                    const isToday = day === now.getDate() ? 'class="today"' : '';
-                    html += `<td ${isToday}>${day}</td>`;
-                    day++;
-                }
-                if ((i + 1) % 7 === 0 && day <= daysInMonth) html += '</tr><tr>';
-            }
-            html += '</tr></table>';
-            document.getElementById('calendar-wrapper').innerHTML = html;
-        }
-        renderCalendar();
+          sectionHtml += `
+            <article class="post">
+              <h3 class="title">${escapeHtml(u.title || "Untitled")}</h3>
 
-        db.ref('updates').on('value', (snapshot) => {
-            const container = document.getElementById('categorized-feed');
-            const urgentFeed = document.getElementById('urgent-feed');
-            container.innerHTML = '';
-            urgentFeed.innerHTML = '';
+              <div class="meta">
+                <div class="meta-item"><strong>Date:</strong> ${escapeHtml(formatDate(u.date))}</div>
+                <div class="meta-item"><strong>Deadline:</strong> ${escapeHtml(formatDate(u.deadline))}</div>
+                <div class="meta-item"><strong>Location:</strong> ${escapeHtml(u.location || "N/A")}</div>
+                <div class="meta-item"><strong>Editor(s):</strong> ${nl2br(u.editor || "N/A")}</div>
+              </div>
 
-            const updates = [];
-            snapshot.forEach((child) => {
-                updates.push({ id: child.key, ...child.val() });
-            });
+              <div class="content">${nl2br(u.description || "")}</div>
 
-            const todayISO = getLocalISODate();
-
-            // Keep only active posts (deadline today or future)
-            const activeUpdates = updates.filter(u => u && u.deadline && u.deadline >= todayISO);
-
-            if (activeUpdates.length === 0) {
-                container.innerHTML = '<p>No active updates at this time.</p>';
-                urgentFeed.innerHTML = '<p>No imminent deadlines.</p>';
-                return;
-            }
-
-            activeUpdates.sort((a, b) => a.deadline.localeCompare(b.deadline));
-
-            let urgentCount = 0;
-            activeUpdates.forEach(update => {
-                const today = new Date(todayISO + 'T00:00:00');
-                const dl = new Date(update.deadline + 'T00:00:00');
-                const diffDays = Math.ceil((dl - today) / (1000 * 60 * 60 * 24));
-
-                if (diffDays >= 0 && diffDays <= 5) {
-                    urgentCount++;
-                    urgentFeed.innerHTML += `
-                        <div class="urgent-item">
-                            <div class="urgent-title">${update.title || 'Untitled'}</div>
-                            <div class="urgent-days">Deadline: ${formatDate(update.deadline)} (${diffDays === 0 ? 'Today' : diffDays + ' days left'})</div>
-                        </div>
-                    `;
-                }
-            });
-
-            if (urgentCount === 0) {
-                urgentFeed.innerHTML = '<p>No imminent deadlines.</p>';
-            }
-
-            const categories = {};
-            activeUpdates.forEach(update => {
-                const cat = update.category || 'Other Updates';
-                if (!categories[cat]) categories[cat] = [];
-                categories[cat].push(update);
-            });
-
-            Object.entries(categories).forEach(([categoryName, items]) => {
-                let sectionHtml = `
-                    <div class="category-section">
-                        <div class="category-heading">${categoryName}</div>
-                `;
-
-                items.forEach(update => {
-                    sectionHtml += `
-                        <div class="post">
-                            <div class="title">${update.title || 'Untitled'}</div>
-                            <div class="meta">
-                                <div><strong>Date:</strong> ${formatDate(update.date)}</div>
-                                <div><strong>Deadline:</strong> ${formatDate(update.deadline)}</div>
-                                <div><strong>Location:</strong> ${update.location || 'N/A'}</div>
-                                <div><strong>Editor(s):</strong><br>${(update.editor || 'N/A').replace(/\n/g, '<br>')}</div>
-                            </div>
-                            <div class="content">${(update.description || '').replace(/\n/g, '<br>')}</div>
-                            ${update.link ? `<br><a href="${update.link}" target="_blank" rel="noopener noreferrer">View Original Call &rarr;</a>` : ''}
-                        </div>
-                    `;
-                });
-
-                sectionHtml += `</div>`;
-                container.innerHTML += sectionHtml;
-            });
+              ${safeLink ? `<p style="margin-top: 12px;"><a href="${safeLink}" target="_blank" rel="noopener noreferrer">View Original Call →</a></p>` : ""}
+            </article>
+          `;
         });
-    </script>
+
+        sectionHtml += "</div>";
+        container.innerHTML += sectionHtml;
+      });
+    });
+  </script>
 </body>
 </html>
