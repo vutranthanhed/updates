@@ -76,6 +76,39 @@
       text-decoration-thickness: 2px;
     }
 
+    .header-actions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .subscribe-tag {
+      display: inline-block;
+      background: #0f766e;
+      color: #fff;
+      border: 1px solid #0f766e;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: 0.2px;
+    }
+
+    .subscribe-tag:hover {
+      background: #115e59;
+      border-color: #115e59;
+      opacity: 1;
+      text-decoration: none;
+    }
+
+    .subscribe-note {
+      font-size: 0.84rem;
+      color: #6b7280;
+    }
+
     .top-dashboard {
       display: grid;
       grid-template-columns: 1fr 1.6fr;
@@ -237,6 +270,12 @@
   <header>
     <h1>TERECONET Professional Updates</h1>
     <p class="subheading">Prepared by Dr Tran Thanh Vu (<a href="mailto:vutranthanh.ed@gmail.com">vutranthanh.ed@gmail.com</a>)</p>
+
+    <div class="header-actions">
+      <!-- Replace with your Apps Script Web App URL -->
+      <a class="subscribe-tag" href="YOUR_APPS_SCRIPT_WEBAPP_URL" target="_blank" rel="noopener">Subscribe for Weekly Emails</a>
+      <span class="subscribe-note">Tip: if first email lands in Spam/Junk, mark as “Not spam”.</span>
+    </div>
   </header>
 
   <div class="top-dashboard">
@@ -277,7 +316,7 @@
     function getLocalISODate() {
       const now = new Date();
       const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-      return local.toISOString().slice(0, 10); // YYYY-MM-DD
+      return local.toISOString().slice(0, 10);
     }
 
     function formatDate(isoDate) {
@@ -325,8 +364,6 @@
       });
 
       const todayISO = getLocalISODate();
-
-      // Keep only active posts (deadline today or future)
       const activeUpdates = updates.filter(u => u && u.deadline && u.deadline >= todayISO);
 
       if (activeUpdates.length === 0) {
